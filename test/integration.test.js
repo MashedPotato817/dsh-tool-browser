@@ -175,3 +175,56 @@ test("browser_evaluate surfaces script errors", { skip: SKIP }, async () => {
 		await mounted.dispose();
 	}
 });
+
+test("extended tools: fill_form, select_option, hover, resize (real browser)", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL);
+	try {
+		const { browser_navigate, browser_fill_form, browser_select_option, browser_hover, browser_resize, browser_evaluate } = mounted.tools;
+
+		const html = `<html><body>
+			<input id="a"><input id="b">
+			<select id="sel"><option value="1">One</option><option value="2">Two</option></select>
+			<div id="hov">hover me</div>
+		</body></html>`;
+
+		await browser_navigate.execute({ url: dataUrl(html) }, exec);
+		await browser_fill_form.execute({ fields: [{ target: "#a", value: "x" }, { target: "#b", value: "y" }] }, exec);
+		const values = await browser_evaluate.execute({ script: "[document.getElementById('a').value, document.getElementById('b').value]" }, exec);
+		assert.match(values.text, /\["x","y"\]/);
+
+		await browser_select_option.execute({ target: "#sel", values: ["2"] }, exec);
+		const selected = await browser_evaluate.execute({ script: "document.getElementById('sel').value" }, exec);
+		assert.match(selected.text, /2/);
+
+		await browser_hover.execute({ target: "#hov" }, exec);
+		await browser_resize.execute({ width: 900, height: 600 }, exec);
+		const innerWidth = await browser_evaluate.execute({ script: "window.innerWidth" }, exec);
+		assert.match(innerWidth.text, /900/);
+	} finally {
+		await mounted.dispose();
+	}
+});
+
+test("tab management: open, list, switch, close (real browser)", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL);
+	try {
+		const { browser_navigate, browser_open_tab, browser_tabs, browser_switch_tab, browser_close_tab, browser_snapshot } = mounted.tools;
+
+		await browser_navigate.execute({ url: dataUrl("<html><body>tab0</body></html>") }, exec);
+		await browser_open_tab.execute({ url: dataUrl("<html><body>tab1</body></html>") }, exec);
+
+		const tabs = await browser_tabs.execute({}, exec);
+		assert.equal(tabs.text.split("\n").length, 2);
+		assert.match(tabs.text, /\(active\)/);
+
+		await browser_switch_tab.execute({ index: 0 }, exec);
+		const snap0 = await browser_snapshot.execute({}, exec);
+		assert.match(snap0.text, /tab0/);
+
+		await browser_close_tab.execute({}, exec);
+		const snap1 = await browser_snapshot.execute({}, exec);
+		assert.match(snap1.text, /tab1/);
+	} finally {
+		await mounted.dispose();
+	}
+});

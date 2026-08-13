@@ -20,6 +20,15 @@ Edge 缺失时自动回退到 Playwright 自带的 Chromium。
 | `browser_console_messages` | 返回页面控制台消息 |
 | `browser_wait_for` | 等待固定毫秒数 |
 | `browser_back` | 返回上一页 |
+| `browser_fill_form` | 一次填多个表单字段 |
+| `browser_select_option` | 下拉框选择选项 |
+| `browser_hover` | 悬停元素 |
+| `browser_drag` | 拖拽（源元素 → 目标元素） |
+| `browser_resize` | 调整视口尺寸 |
+| `browser_open_tab` | 新开标签页（可带 URL） |
+| `browser_tabs` | 列出所有标签页 |
+| `browser_switch_tab` | 切换到指定标签页 |
+| `browser_close_tab` | 关闭当前标签页 |
 
 设计要点：
 

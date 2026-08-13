@@ -20,21 +20,30 @@ test("exports the Cordis plugin surface", () => {
 	assert.equal(typeof apply, "function");
 });
 
-test("apply registers 10 browser tools and one system-prompt section", async () => {
+test("apply registers 19 browser tools and one system-prompt section", async () => {
 	const { ctx, registered } = makeCtx();
 	await apply(ctx, { outputDir: "output" });
 
-	assert.equal(registered.tools.length, 10);
+	assert.equal(registered.tools.length, 19);
 	assert.deepEqual(
 		registered.tools.map((tool) => tool.name).sort(),
 		[
 			"browser_back",
 			"browser_click",
+			"browser_close_tab",
 			"browser_console_messages",
+			"browser_drag",
 			"browser_evaluate",
+			"browser_fill_form",
+			"browser_hover",
 			"browser_navigate",
+			"browser_open_tab",
 			"browser_press_key",
+			"browser_resize",
+			"browser_select_option",
 			"browser_snapshot",
+			"browser_switch_tab",
+			"browser_tabs",
 			"browser_take_screenshot",
 			"browser_type",
 			"browser_wait_for"
