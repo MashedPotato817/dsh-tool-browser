@@ -39,8 +39,17 @@ Edge 缺失时自动回退到 Playwright 自带的 Chromium。
 
 ## 安装
 
+npm 发布后一条命令：
+
 ```bash
 dsh plugin --profile <name> add dsh-tool-browser
+```
+
+发布前可用 GitHub 或本地路径：
+
+```bash
+dsh plugin --profile <name> add https://github.com/MashedPotato817/dsh-tool-browser.git
+# 或本地：dsh plugin --profile <name> add /path/to/dsh-tool-browser
 ```
 
 在 profile 的 `cordis.patch.yml` 里启用：
