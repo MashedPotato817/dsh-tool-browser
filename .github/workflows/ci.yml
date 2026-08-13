@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "feat/**", "fix/**", "docs/**", "chore/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium (for browser integration tests)
+        run: npx playwright install --with-deps chromium
+
+      - name: Syntax check
+        run: node --check lib/index.js
+
+      - name: Unit and integration tests
+        run: node --test
