@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
-import { apply } from "../lib/index.js";
+import { apply, BrowserSession } from "../lib/index.js";
 
 /** Probe which browser channel works: the installed Edge first, then bundled Chromium (CI). */
 async function resolveChannel() {
@@ -33,7 +33,7 @@ async function disposeEffects(effects) {
 	}
 }
 
-async function mount(channel) {
+async function mount(channel, overrides = {}) {
 	const tools = [];
 	const effects = [];
 	const ctx = {
@@ -41,7 +41,7 @@ async function mount(channel) {
 		systemPrompt: { section: () => {} },
 		effect: (generator) => effects.push(generator)
 	};
-	await apply(ctx, { channel, headless: true, outputDir: OUTPUT_DIR });
+	await apply(ctx, { channel, headless: true, outputDir: OUTPUT_DIR, actionTimeoutMs: 2000, ...overrides });
 	return {
 		tools: Object.fromEntries(tools.map((tool) => [tool.name, tool])),
 		dispose: () => disposeEffects(effects)
@@ -107,6 +107,70 @@ test("browser_back reports when there is no history (real browser)", { skip: SKI
 		await browser_navigate.execute({ url: dataUrl("<html><body>only</body></html>") }, exec);
 		const back = await browser_back.execute({}, exec);
 		assert.match(back.text, /No previous page/);
+	} finally {
+		await mounted.dispose();
+	}
+});
+
+test("BrowserSession re-launches the browser after a crash", { skip: SKIP }, async () => {
+	const session = new BrowserSession({ channel: CHANNEL, headless: true, viewportWidth: 800, viewportHeight: 600 });
+	try {
+		const page = await session.ensurePage();
+		assert.ok(!page.isClosed());
+		await session.browser.close(); // simulate a browser crash
+		const page2 = await session.ensurePage();
+		assert.ok(!page2.isClosed());
+		assert.notEqual(page2, page);
+	} finally {
+		await session.close();
+	}
+});
+
+test("browser_navigate rejects an invalid URL", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL);
+	try {
+		await assert.rejects(
+			() => mounted.tools.browser_navigate.execute({ url: "not a url" }, exec),
+			/browser_navigate failed/
+		);
+	} finally {
+		await mounted.dispose();
+	}
+});
+
+test("browser_click reports a missing element", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL);
+	try {
+		await mounted.tools.browser_navigate.execute({ url: dataUrl("<html><body>x</body></html>") }, exec);
+		await assert.rejects(
+			() => mounted.tools.browser_click.execute({ target: "#nope" }, exec),
+			/browser_click failed/
+		);
+	} finally {
+		await mounted.dispose();
+	}
+});
+
+test("browser_navigate enforces allowedHosts", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL, { allowedHosts: ["example.com"] });
+	try {
+		await assert.rejects(
+			() => mounted.tools.browser_navigate.execute({ url: "https://other-site.test/" }, exec),
+			/not allowed/
+		);
+	} finally {
+		await mounted.dispose();
+	}
+});
+
+test("browser_evaluate surfaces script errors", { skip: SKIP }, async () => {
+	const mounted = await mount(CHANNEL);
+	try {
+		await mounted.tools.browser_navigate.execute({ url: dataUrl("<html><body>x</body></html>") }, exec);
+		await assert.rejects(
+			() => mounted.tools.browser_evaluate.execute({ script: "throw new Error('boom')" }, exec),
+			/browser_evaluate failed/
+		);
 	} finally {
 		await mounted.dispose();
 	}

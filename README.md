@@ -24,6 +24,7 @@ Edge 缺失时自动回退到 Playwright 自带的 Chromium。
 设计要点：
 
 - **共享页面**：插件实例维护一个浏览器 + 一个页面，会话内浏览状态连续；工具默认互斥（非并发安全），避免相互干扰。
+  - 限制：使用该插件的所有会话共享同一个页面，跨会话会互相影响；需要隔离时请用独立 profile 实例。
 - **中止安全**：每个工具转发 `exec.signal`，超时/中止策略不会挂死 agent 回合。
 - **结果结构化**：全部返回 `{ text }`，快照/求值结果限长，控制 KV cache 影响。
 
@@ -46,6 +47,7 @@ dsh plugin --profile <name> add dsh-tool-browser
 | 键 | 默认值 | 含义 |
 |---|---|---|
 | `channel` | `msedge` | Playwright 浏览器 channel（`msedge` / `chrome` / 缺省=自带 Chromium） |
+| `allowedHosts` | `[]` | 允许访问的 host 白名单（空=全部允许，`*`=全部，如 `example.com`）；`data:`/`about:` 始终允许 |
 | `headless` | `true` | 无头模式（调试可设 `false`） |
 | `outputDir` | 系统临时目录 | 截图输出目录 |
 | `timeoutMs` | `60000` | 工具调用总超时 |
