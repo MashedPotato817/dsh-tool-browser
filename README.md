@@ -1,5 +1,9 @@
 # dsh-tool-browser
 
+[![npm version](https://img.shields.io/npm/v/dsh-tool-browser)](https://www.npmjs.com/package/dsh-tool-browser)
+[![npm downloads](https://img.shields.io/npm/dm/dsh-tool-browser)](https://www.npmjs.com/package/dsh-tool-browser)
+[![License](https://img.shields.io/npm/l/dsh-tool-browser)](https://github.com/MashedPotato817/dsh-tool-browser)
+
 给 DeepSeek Harness（DSH）的**原生浏览器自动化工具插件**，由 Playwright 驱动。
 默认直接使用本机安装的 **Microsoft Edge**（`channel: "msedge"`，无需下载浏览器），
 Edge 缺失时自动回退到 Playwright 自带的 Chromium。
@@ -39,7 +43,7 @@ Edge 缺失时自动回退到 Playwright 自带的 Chromium。
 
 ## 安装
 
-已发布到 npm（`dsh-tool-browser@0.1.0`），一条命令安装：
+已发布到 npm，一条命令安装（推荐，自动拉取 registry 最新版）：
 
 ```bash
 dsh plugin --profile <name> add dsh-tool-browser
@@ -58,7 +62,40 @@ dsh plugin --profile <name> add https://github.com/MashedPotato817/dsh-tool-brow
 - insert:
     - id: dsh-tool-browser
       name: dsh-tool-browser
+      config:             # 可选，下列为默认值
+        channel: msedge    # 浏览器 channel
+        headless: true
+        allowedHosts: []   # 空 = 允许全部 host
 ```
+
+## 快速开始
+
+三步即可在 DeepSeek Harness（DSH）里获得浏览器自动化能力：
+
+```bash
+# 1. 安装插件
+dsh plugin --profile <name> add dsh-tool-browser
+
+# 2. 在 cordis.patch.yml 里 insert 启用（见上）
+
+# 3. 启动 DSH 后，模型会自动拥有 browser_* 工具，直接在对话里让 agent 操作浏览器：
+#    「打开 https://example.com 并截图」
+```
+
+### 调用示例
+
+安装并启用后，这些工具会注册进 DSH 的 `ctx.tools`，agent 无需额外 import 即可直接调用：
+
+```js
+// 在 DSH 插件 / 对话中，模型按工具名直接调用，无需手工引用
+await ctx.tools.browser_navigate({ url: "https://example.com" });
+await ctx.tools.browser_snapshot({});
+await ctx.tools.browser_click({ target: "button#submit" });
+await ctx.tools.browser_evaluate({ script: "document.title" });
+await ctx.tools.browser_take_screenshot({});
+```
+
+> 工具名与 DSH 内置 `browser_*` 能力一一对应，完整清单见上文「能力」表。
 
 ## 配置
 
